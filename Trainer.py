@@ -54,26 +54,23 @@ class Trainer:
         with open(self.results_file,'a') as f:
             f.write(message.format(-1, train_accuracy, test_accuracy)+'\n')
 
+        train_batches = dataset.get_batches(train=True)
+        batch = train_batches[0]
+        images, labels = process_data(batch)
+        train_feed_dict[x] = images
+        train_feed_dict[y_] = labels
         for epoch in range(self.epochs):
-            train_batches = dataset.get_batches(train=True)
-            for batch in train_batches:
-                images, labels = process_data(batch)
-                train_feed_dict[x] = images
-                train_feed_dict[y_] = labels
-                train_step.run(feed_dict=train_feed_dict)
+            train_step.run(feed_dict=train_feed_dict)
 
             # TODO: remove all this hideous boilerplate
             run_opts = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
             run_opts_metadata = tf.RunMetadata()
-            train_images, train_labels = process_data(dataset.get_sample(train=True))
-            train_feed_dict[x] = train_images
-            train_feed_dict[y_] = train_labels
             train_summary, train_accuracy = sess.run([merged, accuracy], feed_dict=train_feed_dict,
                                                      options=run_opts, run_metadata=run_opts_metadata)
             test_images, test_labels = process_data(dataset.get_sample(train=False))
             test_feed_dict[x] = test_images
             test_feed_dict[y_] = test_labels
-            test_summary, test_accuracy = sess.run([merged, accuracy], feed_dict=test_feed_dict,
+            test_summary, test_accuracy = sess.run([merged, accuracy], feed_dict=train_feed_dict,
                                                    options=run_opts, run_metadata=run_opts_metadata)
             print(message.format(epoch, train_accuracy, test_accuracy))
             with open(self.results_file, 'a') as f:
